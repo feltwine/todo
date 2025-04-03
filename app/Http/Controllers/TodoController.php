@@ -12,7 +12,10 @@ class TodoController extends Controller
      */
     public function index()
     {
-        $todos = Todo::all()->get();
+        $todos = Todo::paginate(
+            perPage: 30,
+            page: 1,
+        );
         return view('todo.index', compact('todos'));
     }
 
@@ -21,7 +24,7 @@ class TodoController extends Controller
      */
     public function create()
     {
-
+        return view('todo.create');
     }
 
     /**
@@ -29,21 +32,13 @@ class TodoController extends Controller
      */
     public function store(Request $request)
     {
-        $todo = Todo::create([
+        Todo::create([
             'title' => $request->title,
             'description' => $request->description,
             'completed' => false,
         ]);
 
-        return view('')
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Todo $todo)
-    {
-        //
+       return redirect()->route('todo.index');
     }
 
     /**
@@ -51,7 +46,7 @@ class TodoController extends Controller
      */
     public function edit(Todo $todo)
     {
-        //
+        return view('todo.edit', compact('todo'));
     }
 
     /**
@@ -59,7 +54,12 @@ class TodoController extends Controller
      */
     public function update(Request $request, Todo $todo)
     {
-        //
+        $todo->update([
+            'title' => $request->title ?? $todo->title,
+            'description' => $request->description ?? $todo->description
+        ]);
+
+        return redirect()->route('todo.index');
     }
 
     /**
@@ -67,6 +67,7 @@ class TodoController extends Controller
      */
     public function destroy(Todo $todo)
     {
-        //
+        $this->destroy($todo);
+        return redirect()->back();
     }
 }
