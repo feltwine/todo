@@ -12,62 +12,70 @@ class TodoController extends Controller
      */
     public function index()
     {
-        $todos = Todo::paginate(
-            perPage: 30,
-            page: 1,
-        );
-        return view('todo.index', compact('todos'));
-    }
+        $todos = Todo::query()
+            ->orderByDesc('id')
+            ->paginate(20); // No need to specify `page: 0`
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('todo.create');
+
+        return view('todo.index', ['todos' => $todos]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
-        Todo::create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'completed' => false,
+        // Validate input
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
         ]);
 
-       return redirect()->route('todo.index');
+        // Create new todo
+        $todo = new Todo();
+        $todo->title = $validated['title'];
+        $todo->description = $validated['description'] ?? '';
+        $todo->completed = false;
+        $todo->save();
+
+        // Return JSON response
+        return response()->json($todo);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Todo $todo)
-    {
-        return view('todo.edit', compact('todo'));
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Todo $todo)
-    {
-        $todo->update([
-            'title' => $request->title ?? $todo->title,
-            'description' => $request->description ?? $todo->description
-        ]);
+/**
+ * Update the specified resource in storage.
+ */
+public
+function update(Request $request, $id)
+{
+    $todo = Todo::findOrFail($id);
 
-        return redirect()->route('todo.index');
-    }
+    $validatedData = $request->validate([
+        'title' => 'sometimes|required|string',
+        'description' => 'sometimes|required|string',
+        'completed' => 'sometimes|boolean',
+    ]);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Todo $todo)
-    {
-        $this->destroy($todo);
-        return redirect()->back();
-    }
+    $todo->update($validatedData);
+
+    return response()->json([
+        'success' => true,
+        'todo' => $todo
+    ]);
+}
+
+/**
+ * Remove the specified resource from storage.
+ */
+public
+function destroy(Todo $todo)
+{
+    $todo->delete();
+    return response()->json([
+        'success' => true,
+        'message' => 'Todo deleted successfully'
+    ]);
+}
 }
